@@ -1,0 +1,54 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT signing secret in Base64 format."
+    },
+    {
+      "name": "jwt.expiration-ms",
+      "type": "java.lang.Long",
+      "description": "JWT expiration duration in milliseconds."
+    },
+    {
+      "name": "razorpay.key.id",
+      "type": "java.lang.String",
+      "description": "Razorpay API key id for checkout initialization."
+    },
+    {
+      "name": "razorpay.key.secret",
+      "type": "java.lang.String",
+      "description": "Razorpay API key secret used for server-side operations and signature verification."
+    },
+    {
+      "name": "weather.api.key",
+      "type": "java.lang.String",
+      "description": "Weather service API key for smart advisory features."
+    },
+    {
+      "name": "cloudinary.cloud-name",
+      "type": "java.lang.String",
+      "description": "Cloudinary cloud name for proof image uploads."
+    },
+    {
+      "name": "cloudinary.upload-preset",
+      "type": "java.lang.String",
+      "description": "Unsigned Cloudinary upload preset for image uploads."
+    },
+    {
+      "name": "spring.h2.console.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable H2 database web console in local/test profiles."
+    },
+    {
+      "name": "spring.h2.console.path",
+      "type": "java.lang.String",
+      "description": "Path for the H2 console endpoint."
+    },
+    {
+      "name": "spring.jpa.packages-to-scan",
+      "type": "java.lang.String",
+      "description": "Entity packages to scan for JPA mapping."
+    }
+  ]
+}

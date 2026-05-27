@@ -1,0 +1,401 @@
+/* ── Global Responsive & Smooth Defaults ── */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #f5f7fb);
+  color: var(--ink, #1f2937);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.app-footer {
+  margin-top: auto;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-footer__left {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.app-footer__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-footer__link {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.app-footer__link:hover {
+  color: var(--ink);
+}
+
+/* Smooth scroll for the whole page */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Universal transition for interactive elements */
+*,
+*::before,
+*::after {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth image rendering */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Consistent focus ring across all interactive elements */
+:focus-visible {
+  outline: 2px solid rgba(46, 125, 50, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Prevent layout shifts with consistent font loading */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Consistent container across all pages */
+.page-container {
+  width: min(1200px, 94vw);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Consistent section spacing */
+.section-gap {
+  display: grid;
+  gap: clamp(16px, 3vw, 28px);
+}
+
+/* Uniform page-hero sizing */
+.page-hero {
+  min-height: clamp(140px, 22vw, 200px);
+}
+
+/* Consistent card hover — buttery smooth */
+.product-card,
+.stat-card,
+.quick-card,
+.order-card,
+.inventory-card,
+.smart-card,
+.widget-card,
+.disease-card,
+.cart-item-card,
+.agent-card,
+.agent-stat-card {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* Uniform grid sizing for all product/card grids */
+.product-grid,
+.inventory-grid,
+.stat-grid,
+.smart-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+}
+
+/* ── Mobile-first responsive breakpoints ── */
+
+/* Tablets & small laptops */
+@media (max-width: 1024px) {
+  .page-container {
+    padding: 0 12px;
+  }
+
+  .checkout-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* Tablets portrait */
+@media (max-width: 768px) {
+  .page-hero {
+    min-height: 140px;
+    padding: 24px 20px;
+    border-radius: 18px;
+    margin-bottom: 18px;
+  }
+
+  .page-hero h1 {
+    font-size: clamp(20px, 5vw, 28px);
+  }
+
+  .page-hero p {
+    font-size: 0.95rem;
+  }
+
+  .product-grid,
+  .inventory-grid,
+  .stat-grid,
+  .smart-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+    gap: 16px;
+  }
+
+  .farmer-section,
+  .supplier-section {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .modal {
+    padding: 20px;
+    border-radius: 18px;
+    max-width: 92vw;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .page-hero {
+    min-height: 120px;
+    padding: 20px 16px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+
+  .page-hero h1 {
+    font-size: clamp(18px, 5vw, 24px);
+  }
+
+  .product-grid,
+  .inventory-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .product-card {
+    padding: 12px;
+  }
+
+  .product-card img {
+    height: 130px;
+    border-radius: 10px;
+  }
+
+  .farmer-section,
+  .supplier-section {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .farmer-hero,
+  .supplier-hero {
+    min-height: 200px;
+    padding: 24px;
+    border-radius: 18px;
+  }
+
+  .farmer-hero h1,
+  .supplier-hero h1 {
+    font-size: clamp(22px, 5vw, 32px);
+  }
+
+  .dash-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .quick-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .order-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .modal {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .dashboard-main {
+    padding: 20px 14px 80px;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .btn.square {
+    padding: 10px 16px;
+  }
+}
+/* =========================================================================
+   BUTTERY SMOOTH GLOBAL UI/UX IMPROVEMENTS
+   ========================================================================= */
+
+/* Make all text selection look premium */
+::selection {
+  background: var(--role-primary, rgba(46, 125, 50, 0.2));
+  color: var(--ink);
+}
+
+/* Smooth auto-scaling for buttons */
+button, 
+.btn,
+.sidebar-link,
+.card,
+.dashboard-notification-item {
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* bouncy ease out */
+}
+
+button:active, 
+.btn:active, 
+.sidebar-link:active {
+  transform: scale(0.96) !important;
+}
+
+/* Soft hover glow / lift for cards across the app */
+.card, 
+.feature-card, 
+.product-card {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease !important;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.card:hover, 
+.feature-card:hover, 
+.product-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04) !important;
+}
+
+body[data-theme="dark"] .card:hover, 
+body[data-theme="dark"] .feature-card:hover, 
+body[data-theme="dark"] .product-card:hover {
+  box-shadow: 0 14px 28px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.2) !important;
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* Inputs & Textareas focus smoothing */
+input, select, textarea {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--role-primary-rgb, 46, 125, 50), 0.15) !important;
+}
+
+/* Subtle image loads */
+img {
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
+img:hover {
+  filter: brightness(1.05);
+}
+
+/* Buttery scrollbar for the entire webkit app */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.4);
+}
+
+/* Tooltip or popover soft animations */
+[role="tooltip"], .popover {
+  animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.9) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Enhancing existing dashboard headers for a glassier feel */
+.dashboard-headerbar {
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+.dashboard-headerbar:hover {
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+}
+
+/* Links underline sweep animation */
+a:not(.btn):not(.sidebar-link):not(.sidebar-brand) {
+  position: relative;
+  text-decoration: none;
+}
+a:not(.btn):not(.sidebar-link):not(.sidebar-brand)::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: currentColor;
+  transform-origin: bottom right;
+  transition: transform 0.3s cubic-bezier(0.86, 0, 0.07, 1);
+}
+a:not(.btn):not(.sidebar-link):not(.sidebar-brand):hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}

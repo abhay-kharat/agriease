@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Check</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        pre { background: #2d2d2d; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; font-size: 14px; }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Diagnostics</h1>
+    
+    <button onclick="checkLocalStorage()">Check LocalStorage</button>
+    <button onclick="testSupplierOrders()">Test GET /supplier/orders</button>
+    <button onclick="testDeleteOrder()">Test DELETE /supplier/orders/1</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `<pre class="${className}">${message}</pre>`;
+        }
+        
+        function checkLocalStorage() {
+            output.innerHTML = '';
+            log('=== Checking LocalStorage ===');
+            
+            const user = localStorage.getItem('user');
+            if (!user) {
+                log('❌ No user data in localStorage', 'error');
+                log('Please log in first!', 'warning');
+                return;
+            }
+            
+            try {
+                const userData = JSON.parse(user);
+                log('✅ User data found', 'success');
+                log(JSON.stringify(userData, null, 2));
+                
+                if (userData.token) {
+                    log('✅ Token present', 'success');
+                    log('Token (first 50 chars): ' + userData.token.substring(0, 50) + '...');
+                } else {
+                    log('❌ No token found in user data', 'error');
+                }
+                
+                if (userData.role) {
+                    log(`✅ Role: ${userData.role}`, 'success');
+                    if (userData.role !== 'ROLE_SUPPLIER') {
+                        log('⚠️ WARNING: Not logged in as SUPPLIER!', 'warning');
+                    }
+                } else {
+                    log('❌ No role found', 'error');
+                }
+            } catch (e) {
+                log('❌ Failed to parse user data: ' + e.message, 'error');
+            }
+        }
+        
+        async function testSupplierOrders() {
+            output.innerHTML = '';
+            log('=== Testing GET /supplier/orders ===');
+            
+            const user = localStorage.getItem('user');
+            if (!user) {
+                log('❌ Not logged in', 'error');
+                return;
+            }
+            
+            const userData = JSON.parse(user);
+            if (!userData.token) {
+                log('❌ No token available', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/agriease/supplier/orders', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + userData.token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Success! Orders received:', 'success');
+                    log(JSON.stringify(data, null, 2));
+                } else {
+                    log('❌ Request failed', 'error');
+                    const text = await response.text();
+                    log('Response: ' + text);
+                }
+            } catch (e) {
+                log('❌ Error: ' + e.message, 'error');
+            }
+        }
+        
+        async function testDeleteOrder() {
+            output.innerHTML = '';
+            log('=== Testing DELETE /supplier/orders/1 ===');
+            log('⚠️ This is a test - will try to delete order #1', 'warning');
+            log('');
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const user = localStorage.getItem('user');
+            if (!user) {
+                log('❌ Not logged in', 'error');
+                return;
+            }
+            
+            const userData = JSON.parse(user);
+            if (!userData.token) {
+                log('❌ No token available', 'error');
+                return;
+            }
+            
+            const orderId = prompt('Enter order ID to test delete (or cancel):', '999');
+            if (!orderId) {
+                log('Test cancelled');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:8080/agriease/supplier/orders/${orderId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + userData.token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Success!', 'success');
+                    log(JSON.stringify(data, null, 2));
+                } else {
+                    log('❌ Request failed', 'error');
+                    const text = await response.text();
+                    log('Response: ' + text);
+                }
+            } catch (e) {
+                log('❌ Error: ' + e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

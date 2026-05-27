@@ -1,0 +1,295 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useAuth } from "../../auth/AuthContext";
+import Button from "../../components/ui/Button";
+import BackButton from "../../components/BackButton";
+import api from "../../api/axios";
+import { toast } from "react-toastify";
+import { useLanguage } from "../../context/LanguageContext";
+
+export default function Profile() {
+  const { user, login } = useAuth();
+  const { t, language } = useLanguage();
+  const locale = language === "mr" ? "mr-IN" : "en-IN";
+  const memberSinceDate = user?.createdAt ? new Date(user.createdAt) : null;
+  const [isEditing, setIsEditing] = useState(false);
+  const getInitialFormData = (profileUser = user) => ({
+    name: profileUser?.name || "",
+    email: profileUser?.email || "",
+    phone: profileUser?.phone || "",
+    address: profileUser?.address || "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [formData, setFormData] = useState(() => getInitialFormData());
+
+  const resetFormFromUser = (profileUser = user) =>
+    setFormData((prev) => ({
+      ...getInitialFormData(profileUser),
+      currentPassword: prev.currentPassword,
+      newPassword: prev.newPassword,
+      confirmPassword: prev.confirmPassword,
+    }));
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+
+    try {
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+      };
+
+      const response = await api.put("/farmer/profile", updateData);
+
+      // Update local storage and context
+      const updatedUser = {
+        ...user,
+        ...response.data,
+      };
+      login(updatedUser);
+      resetFormFromUser(updatedUser);
+
+      toast.success(t("messages.profileUpdated"));
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error(error.response?.data?.message || t("messages.profileUpdateError"));
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error(t("messages.passwordMismatch"));
+      return;
+    }
+
+    if (formData.newPassword.length < 6) {
+      toast.error(t("messages.passwordLength"));
+      return;
+    }
+
+    try {
+      await api.put("/farmer/change-password", {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
+
+      toast.success(t("messages.passwordChanged"));
+      setFormData({
+        ...formData,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Password change error:", error);
+      toast.error(error.response?.data?.message || t("messages.profileUpdateError"));
+    }
+  };
+
+  const fadeUp = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  return (
+    <motion.div initial="hidden" animate="show" variants={staggerContainer}>
+      <BackButton />
+      <motion.div
+        className="page-hero"
+        style={{ backgroundImage: "url('/images/account.jpg')" }}
+        variants={fadeUp}
+      >
+        <h1>{t("farmer.account.title")}</h1>
+        <p>{t("farmer.account.subtitle")}</p>
+      </motion.div>
+
+      <motion.div className="profile-container" variants={staggerContainer}>
+        {/* Profile Information Card */}
+        <motion.div className="profile-card" variants={fadeUp}>
+          <div className="profile-header">
+            <div className="profile-avatar">
+              {user?.name?.charAt(0).toUpperCase() || "F"}
+            </div>
+            <div>
+              <h3>{user?.name || "Farmer"}</h3>
+              <span className="profile-role">{t("farmer.profile.role")}</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleUpdateProfile} className="profile-form">
+            <div className="form-group">
+              <label>{t("common.labels.fullName")}</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className="input"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t("common.labels.email")}</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className="input"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t("common.labels.phoneNumber")}</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className="input"
+                placeholder={t("farmer.profile.placeholders.phone")}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t("common.labels.address")}</label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className="input"
+                rows="3"
+                placeholder={t("farmer.profile.placeholders.address")}
+              />
+            </div>
+
+            <div className="profile-actions">
+              {!isEditing ? (
+                <Button
+                  type="button"
+                  className="btn primary square"
+                  onClick={() => setIsEditing(true)}
+                >
+                  {t("common.actions.editProfile")}
+                </Button>
+              ) : (
+                <>
+                  <Button type="submit" className="btn primary square">
+                    {t("common.actions.saveChanges")}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="btn secondary square"
+                    onClick={() => {
+                      setIsEditing(false);
+                      resetFormFromUser();
+                    }}
+                  >
+                    {t("common.actions.cancel")}
+                  </Button>
+                </>
+              )}
+            </div>
+          </form>
+        </motion.div>
+
+        {/* Change Password Card */}
+        <motion.div className="profile-card" variants={fadeUp}>
+          <h3>{t("common.labels.changePassword")}</h3>
+          <form onSubmit={handleChangePassword} className="profile-form">
+            <div className="form-group">
+              <label>{t("common.labels.currentPassword")}</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                className="input"
+                placeholder={t("common.labels.currentPassword")}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t("common.labels.newPassword")}</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                className="input"
+                placeholder={t("common.labels.newPassword")}
+                minLength="6"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t("common.labels.confirmPassword")}</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="input"
+                placeholder={t("common.labels.confirmPassword")}
+                minLength="6"
+                required
+              />
+            </div>
+
+            <Button type="submit" className="btn primary square">
+              {t("common.actions.saveChanges")}
+            </Button>
+          </form>
+        </motion.div>
+
+        {/* Account Info Card */}
+        <motion.div className="profile-card" variants={fadeUp}>
+          <h3>{t("common.labels.accountInformation")}</h3>
+          <div className="info-list">
+            <div className="info-item">
+              <span className="info-label">{t("common.labels.accountType")}:</span>
+              <span className="info-value">{t("farmer.profile.role")}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">{t("common.labels.memberSince")}:</span>
+              <span className="info-value">
+                {memberSinceDate ? memberSinceDate.toLocaleDateString(locale) : "N/A"}
+              </span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">{t("common.labels.userId")}:</span>
+              <span className="info-value">#{user?.id || "N/A"}</span>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}

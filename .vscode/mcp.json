@@ -1,0 +1,11 @@
+{
+	"inputs": [
+		{
+			"id": "stitchApiKey",
+			"type": "promptString",
+			"description": "Stitch API Key",
+			"password": true
+		}
+	],
+	"servers": {}
+}
