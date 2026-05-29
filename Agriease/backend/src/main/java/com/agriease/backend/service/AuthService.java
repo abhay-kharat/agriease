@@ -211,12 +211,14 @@ public class AuthService {
     }
 
     private String createRefreshToken(User user) {
-        refreshTokenRepository.deleteByUser(user); // Revoke old tokens
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .orElse(new RefreshToken());
+        
         String token = jwtUtil.generateRefreshToken(user.getEmail());
-        RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setToken(hashToken(token));
         refreshToken.setExpiryDate(Instant.now().plusMillis(jwtUtil.getRefreshExpirationMs()));
+        refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
         return token;
     }

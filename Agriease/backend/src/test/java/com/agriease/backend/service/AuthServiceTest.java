@@ -133,6 +133,35 @@ public class AuthServiceTest {
         verify(deliveryAgentRepository, times(1)).save(any(com.agriease.backend.entity.DeliveryAgent.class));
     }
 
+    @Test
+    void testLoginUpdatesExistingRefreshToken() {
+        com.agriease.backend.dto.LoginRequest req = new com.agriease.backend.dto.LoginRequest();
+        req.email = "test@farm.com";
+        req.password = "pass";
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail(req.email);
+        user.setPassword("encoded");
+        user.setActiveRole(RoleType.FARMER);
+        user.addRole(RoleType.FARMER);
+
+        RefreshToken existingToken = new RefreshToken();
+        existingToken.setId(10L);
+        existingToken.setUser(user);
+
+        when(repo.findByEmail(req.email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(eq(req.password), anyString())).thenReturn(true);
+        when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.of(existingToken));
+        when(jwtUtil.generateToken(anyString(), any(RoleType.class))).thenReturn("access-token");
+        when(jwtUtil.generateRefreshToken(anyString())).thenReturn("new-refresh-token");
+
+        authService.login(req);
+
+        verify(refreshTokenRepository, times(1)).save(existingToken);
+        assertEquals(10L, existingToken.getId()); // Should still have the same ID
+    }
+
     private String hashToken(String token) {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
