@@ -29,6 +29,10 @@ public class CloudinaryUploadService {
     }
 
     public String uploadProof(MultipartFile file) {
+        return uploadImage(file, "agriease/delivery-proof");
+    }
+
+    public String uploadImage(MultipartFile file, String folder) {
         if (cloudName == null || cloudName.isBlank() || uploadPreset == null || uploadPreset.isBlank()) {
             throw new RuntimeException("Cloudinary is not configured. Set cloudinary.cloud-name and cloudinary.upload-preset.");
         }
@@ -38,6 +42,9 @@ public class CloudinaryUploadService {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("upload_preset", uploadPreset);
         body.add("file", asResource(file));
+        if (folder != null && !folder.isBlank()) {
+            body.add("folder", folder);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -70,4 +77,3 @@ public class CloudinaryUploadService {
         }
     }
 }
-

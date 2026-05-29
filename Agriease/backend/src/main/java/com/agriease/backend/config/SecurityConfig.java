@@ -15,6 +15,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
 @Configuration
@@ -22,6 +23,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:5175}")
+    private String allowedOrigins;
+
+    @Value("${app.cors.allowed-origin-patterns:http://localhost:*}")
+    private String allowedOriginPatterns;
 
     public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
@@ -62,9 +69,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow local dev origins (Vite default 5173 and some scripts use 5174/5175)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "http://localhost:5175"));
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*"));
+        configuration.setAllowedOrigins(splitCsv(allowedOrigins));
+        configuration.setAllowedOriginPatterns(splitCsv(allowedOriginPatterns));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
@@ -77,5 +83,15 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private List<String> splitCsv(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .toList();
     }
 }

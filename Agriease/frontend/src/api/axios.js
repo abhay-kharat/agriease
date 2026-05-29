@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/agriease",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/agriease",
 });
 
 api.interceptors.request.use((config) => {
@@ -43,31 +43,6 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Add response interceptor to handle 401 errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.error("401 Unauthorized:", error.response?.data);
 
-      // Only auto-logout on authentication endpoints getting 401
-      // For other endpoints, let the component handle it
-      const isAuthEndpoint = error.config?.url?.includes("/auth/");
-      const currentPath = window.location.pathname;
-
-      if (!isAuthEndpoint && !currentPath.includes("/login") && !currentPath.includes("/register")) {
-        // Check if token exists and seems valid
-        const stored = localStorage.getItem("user");
-        if (!stored) {
-          // No token, redirect to login
-          window.location.href = "/login";
-        }
-        // If token exists, let the component handle the error
-        // Don't auto-logout on every 401
-      }
-    }
-    return Promise.reject(error);
-  }
-);
 
 export default api;

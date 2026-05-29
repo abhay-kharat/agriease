@@ -1,0 +1,27 @@
+name: Deploy AI Backend to Azure App Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Agriease/ai-backend/**"
+      - ".github/workflows/azure-ai-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy AI backend
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_AI_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_AI_PUBLISH_PROFILE }}
+          package: Agriease/ai-backend

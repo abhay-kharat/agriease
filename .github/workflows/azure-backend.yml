@@ -1,0 +1,39 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Agriease/backend/**"
+      - ".github/workflows/azure-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: Agriease/backend/pom.xml
+
+      - name: Build backend
+        working-directory: Agriease/backend
+        run: ./mvnw -DskipTests package
+
+      - name: Deploy backend
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_BACKEND_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+          package: Agriease/backend/target/*.jar
