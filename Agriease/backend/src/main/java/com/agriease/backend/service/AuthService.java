@@ -7,8 +7,12 @@ import com.agriease.backend.dto.RegisterRequest;
 import com.agriease.backend.entity.RoleType;
 import com.agriease.backend.entity.User;
 import com.agriease.backend.entity.UserRole;
+import com.agriease.backend.entity.Farmer;
+import com.agriease.backend.entity.Supplier;
 import com.agriease.backend.repository.UserRepository;
 import com.agriease.backend.repository.UserRoleRepository;
+import com.agriease.backend.repository.FarmerRepository;
+import com.agriease.backend.repository.SupplierRepository;
 import com.agriease.delivery.repositories.DeliveryAgentRepository;
 import com.agriease.backend.entity.DeliveryAgent;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,15 +30,21 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final DeliveryAgentRepository deliveryAgentRepository;
+    private final FarmerRepository farmerRepository;
+    private final SupplierRepository supplierRepository;
 
     public AuthService(UserRepository repo, UserRoleRepository userRoleRepository,
                        PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
-                       DeliveryAgentRepository deliveryAgentRepository) {
+                       DeliveryAgentRepository deliveryAgentRepository,
+                       FarmerRepository farmerRepository,
+                       SupplierRepository supplierRepository) {
         this.repo = repo;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.deliveryAgentRepository = deliveryAgentRepository;
+        this.farmerRepository = farmerRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     public User register(RegisterRequest request) {
@@ -55,9 +65,7 @@ public class AuthService {
             }
             existing.addRole(requestedRole);
             User saved = repo.save(existing);
-            if (requestedRole == RoleType.DELIVERY_AGENT) {
-                ensureDeliveryAgentProfile(saved);
-            }
+            ensureRoleProfile(saved, requestedRole, request);
             return saved;
         }
 
@@ -67,12 +75,43 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setActiveRole(requestedRole);
         user.addRole(requestedRole);
+        
+        user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
+        user.setCity(request.getCity());
+        user.setState(request.getState());
+        user.setPincode(request.getPincode());
+        user.setProfilePhoto(request.getProfilePhoto());
 
         User saved = repo.save(user);
-        if (requestedRole == RoleType.DELIVERY_AGENT) {
-            ensureDeliveryAgentProfile(saved);
-        }
+        ensureRoleProfile(saved, requestedRole, request);
         return saved;
+    }
+
+    private void ensureRoleProfile(User user, RoleType role, RegisterRequest request) {
+        if (role == RoleType.DELIVERY_AGENT) {
+            ensureDeliveryAgentProfile(user, request);
+        } else if (role == RoleType.FARMER) {
+            ensureFarmerProfile(user);
+        } else if (role == RoleType.SUPPLIER) {
+            ensureSupplierProfile(user);
+        }
+    }
+
+    private void ensureFarmerProfile(User user) {
+        if (farmerRepository.findByUserId(user.getId()).isEmpty()) {
+            Farmer farmer = new Farmer();
+            farmer.setUser(user);
+            farmerRepository.save(farmer);
+        }
+    }
+
+    private void ensureSupplierProfile(User user) {
+        if (supplierRepository.findByUserId(user.getId()).isEmpty()) {
+            Supplier supplier = new Supplier();
+            supplier.setUser(user);
+            supplierRepository.save(supplier);
+        }
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -81,10 +120,8 @@ public class AuthService {
 
         boolean matches = passwordEncoder.matches(request.password, user.getPassword());
 
-        // Support legacy non-BCrypt passwords by re-encoding on successful match
         if (!matches) {
             if (request.password != null && request.password.equals(user.getPassword())) {
-                // migrate to BCrypt
                 user.setPassword(passwordEncoder.encode(request.password));
                 repo.save(user);
                 matches = true;
@@ -112,9 +149,7 @@ public class AuthService {
             repo.save(user);
         }
 
-        if (user.getActiveRole().canonical() == RoleType.DELIVERY_AGENT) {
-            ensureDeliveryAgentProfile(user);
-        }
+        ensureRoleProfile(user, user.getActiveRole().canonical(), null);
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getActiveRole().canonical());
 
@@ -144,9 +179,7 @@ public class AuthService {
         user.setActiveRole(requestedRole);
         repo.save(user);
 
-        if (requestedRole.canonical() == RoleType.DELIVERY_AGENT) {
-            ensureDeliveryAgentProfile(user);
-        }
+        ensureRoleProfile(user, requestedRole.canonical(), null);
 
         String token = jwtUtil.generateToken(user.getEmail(), requestedRole.canonical());
         return new LoginResponse(token, requestedRole.canonical().name(), user.getName(), user.getId(), toRoleNames(user));
@@ -194,6 +227,10 @@ public class AuthService {
     }
 
     private void ensureDeliveryAgentProfile(User user) {
+        ensureDeliveryAgentProfile(user, null);
+    }
+
+    private void ensureDeliveryAgentProfile(User user, RegisterRequest request) {
         if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
             return;
         }
@@ -206,6 +243,11 @@ public class AuthService {
         agent.setPassword(firstNonBlank(user.getPassword(), user.getEmail()));
         agent.setName(firstNonBlank(user.getName(), user.getEmail()));
         agent.setPhone(firstNonBlank(user.getPhone(), "Not provided"));
+        
+        if (request != null && request.getVehicleTypes() != null && !request.getVehicleTypes().isEmpty()) {
+            agent.setVehicleType(String.join(", ", request.getVehicleTypes()));
+        }
+        
         deliveryAgentRepository.save(agent);
     }
 

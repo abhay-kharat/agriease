@@ -1,10 +1,13 @@
 package com.agriease.backend.controller;
 
+import com.agriease.backend.dto.ApiResponse;
 import com.agriease.backend.dto.LoginRequest;
 import com.agriease.backend.dto.LoginResponse;
 import com.agriease.backend.dto.RegisterRequest;
 import com.agriease.backend.entity.User;
 import com.agriease.backend.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -19,12 +22,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody RegisterRequest request) {
-        return service.register(request);
+    public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
+        User user = service.register(request);
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        return service.login(request);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest request) {
+        LoginResponse response = service.login(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

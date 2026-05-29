@@ -29,7 +29,9 @@ jobs:
 
       - name: Build backend
         working-directory: Agriease/backend
-        run: ./mvnw -DskipTests package
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -DskipTests package
 
       - name: Deploy backend
         uses: azure/webapps-deploy@v3
