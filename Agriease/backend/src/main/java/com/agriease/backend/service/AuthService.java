@@ -4,6 +4,8 @@ import com.agriease.backend.config.JwtUtil;
 import com.agriease.backend.dto.LoginRequest;
 import com.agriease.backend.dto.LoginResponse;
 import com.agriease.backend.dto.RegisterRequest;
+import com.agriease.backend.dto.TokenRefreshRequest;
+import com.agriease.backend.dto.TokenRefreshResponse;
 import com.agriease.backend.entity.RoleType;
 import com.agriease.backend.entity.User;
 import com.agriease.backend.entity.UserRole;
@@ -13,14 +15,17 @@ import com.agriease.backend.repository.UserRepository;
 import com.agriease.backend.repository.UserRoleRepository;
 import com.agriease.backend.repository.FarmerRepository;
 import com.agriease.backend.repository.SupplierRepository;
+import com.agriease.backend.repository.RefreshTokenRepository;
 import com.agriease.delivery.repositories.DeliveryAgentRepository;
 import com.agriease.backend.entity.DeliveryAgent;
+import com.agriease.backend.entity.RefreshToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.time.Instant;
 
 @Service
 public class AuthService {
@@ -32,12 +37,16 @@ public class AuthService {
     private final DeliveryAgentRepository deliveryAgentRepository;
     private final FarmerRepository farmerRepository;
     private final SupplierRepository supplierRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    private static final java.util.List<String> ALLOWED_VEHICLES = java.util.List.of("BIKE", "VAN", "TRUCK", "TRACTOR");
 
     public AuthService(UserRepository repo, UserRoleRepository userRoleRepository,
                        PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
                        DeliveryAgentRepository deliveryAgentRepository,
                        FarmerRepository farmerRepository,
-                       SupplierRepository supplierRepository) {
+                       SupplierRepository supplierRepository,
+                       RefreshTokenRepository refreshTokenRepository) {
         this.repo = repo;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -45,8 +54,10 @@ public class AuthService {
         this.deliveryAgentRepository = deliveryAgentRepository;
         this.farmerRepository = farmerRepository;
         this.supplierRepository = supplierRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public User register(RegisterRequest request) {
         RoleType requestedRole = parseRole(request.getRole());
         if (requestedRole == null) {
@@ -64,6 +75,22 @@ public class AuthService {
                 throw new RuntimeException("Role already linked to this account");
             }
             existing.addRole(requestedRole);
+
+            // Update profile fields if provided in request
+            if (request.getUsername() != null && !request.getUsername().isBlank()) {
+                Optional<User> byUser = repo.findByUsername(request.getUsername());
+                if (byUser.isPresent() && !byUser.get().getId().equals(existing.getId())) {
+                    throw new RuntimeException("Username already taken");
+                }
+                existing.setUsername(request.getUsername());
+            }
+            if (request.getPhone() != null && !request.getPhone().isBlank()) existing.setPhone(request.getPhone());
+            if (request.getAddress() != null && !request.getAddress().isBlank()) existing.setAddress(request.getAddress());
+            if (request.getCity() != null && !request.getCity().isBlank()) existing.setCity(request.getCity());
+            if (request.getState() != null && !request.getState().isBlank()) existing.setState(request.getState());
+            if (request.getPincode() != null && !request.getPincode().isBlank()) existing.setPincode(request.getPincode());
+            if (request.getProfilePhoto() != null && !request.getProfilePhoto().isBlank()) existing.setProfilePhoto(request.getProfilePhoto());
+            
             User saved = repo.save(existing);
             ensureRoleProfile(saved, requestedRole, request);
             return saved;
@@ -72,6 +99,14 @@ public class AuthService {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
+        
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            if (repo.findByUsername(request.getUsername()).isPresent()) {
+                throw new RuntimeException("Username already taken");
+            }
+            user.setUsername(request.getUsername());
+        }
+
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setActiveRole(requestedRole);
         user.addRole(requestedRole);
@@ -114,6 +149,7 @@ public class AuthService {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public LoginResponse login(LoginRequest request) {
         User user = repo.findByEmail(request.email)
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
@@ -152,9 +188,11 @@ public class AuthService {
         ensureRoleProfile(user, user.getActiveRole().canonical(), null);
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getActiveRole().canonical());
+        String refreshToken = createRefreshToken(user);
 
         return new LoginResponse(
                 token,
+                refreshToken,
                 user.getActiveRole().canonical().name(),
                 user.getName(),
                 user.getId(),
@@ -162,6 +200,58 @@ public class AuthService {
         );
     }
 
+    private String hashToken(String token) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.Base64.getEncoder().encodeToString(hash);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to hash token", e);
+        }
+    }
+
+    private String createRefreshToken(User user) {
+        refreshTokenRepository.deleteByUser(user); // Revoke old tokens
+        String token = jwtUtil.generateRefreshToken(user.getEmail());
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setUser(user);
+        refreshToken.setToken(hashToken(token));
+        refreshToken.setExpiryDate(Instant.now().plusMillis(jwtUtil.getRefreshExpirationMs()));
+        refreshTokenRepository.save(refreshToken);
+        return token;
+    }
+
+    public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+        String hashedToken = hashToken(requestRefreshToken);
+
+        return refreshTokenRepository.findByToken(hashedToken)
+                .map(this::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtil.generateToken(user.getEmail(), user.getActiveRole().canonical());
+                    return new TokenRefreshResponse(token, requestRefreshToken);
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+    }
+
+    private RefreshToken verifyExpiration(RefreshToken token) {
+        if (token.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepository.delete(token);
+            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+        }
+        if (token.isRevoked()) {
+            throw new RuntimeException("Refresh token is revoked!");
+        }
+        return token;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void logout(String email) {
+        repo.findByEmail(email).ifPresent(refreshTokenRepository::deleteByUser);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public LoginResponse switchRole(String email, String targetRole) {
         RoleType requestedRole = parseRole(targetRole);
         if (requestedRole == null) {
@@ -182,7 +272,8 @@ public class AuthService {
         ensureRoleProfile(user, requestedRole.canonical(), null);
 
         String token = jwtUtil.generateToken(user.getEmail(), requestedRole.canonical());
-        return new LoginResponse(token, requestedRole.canonical().name(), user.getName(), user.getId(), toRoleNames(user));
+        String refreshToken = createRefreshToken(user);
+        return new LoginResponse(token, refreshToken, requestedRole.canonical().name(), user.getName(), user.getId(), toRoleNames(user));
     }
 
     private RoleType parseRole(String role) {
@@ -244,8 +335,19 @@ public class AuthService {
         agent.setName(firstNonBlank(user.getName(), user.getEmail()));
         agent.setPhone(firstNonBlank(user.getPhone(), "Not provided"));
         
-        if (request != null && request.getVehicleTypes() != null && !request.getVehicleTypes().isEmpty()) {
-            agent.setVehicleType(String.join(", ", request.getVehicleTypes()));
+        if (request != null) {
+            if (request.getVehicleTypes() == null || request.getVehicleTypes().isEmpty()) {
+                throw new RuntimeException("Delivery agents must select at least one vehicle type");
+            }
+            LinkedHashSet<String> uniqueVehicles = new LinkedHashSet<>();
+            for (String vt : request.getVehicleTypes()) {
+                String normalized = vt.trim().toUpperCase();
+                if (!ALLOWED_VEHICLES.contains(normalized)) {
+                    throw new RuntimeException("Unsupported vehicle type: " + vt);
+                }
+                uniqueVehicles.add(normalized);
+            }
+            agent.setVehicleType(String.join(", ", uniqueVehicles));
         }
         
         deliveryAgentRepository.save(agent);

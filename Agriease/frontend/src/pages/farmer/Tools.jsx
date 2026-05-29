@@ -175,48 +175,53 @@ function Tools() {
           </motion.div>
 
           <motion.div className="market-v2-grid" variants={staggerContainer}>
-            {isLoading && tools.length === 0 && <p className="market-v2-muted">{t("farmer.tools.loading")}</p>}
-            {!isLoading && filteredTools.length === 0 && !error && <p className="market-v2-muted">{t("farmer.tools.empty")}</p>}
-
-            {filteredTools.map((p, index) => (
-              <motion.article
-                key={p.id}
-                className="market-v2-card"
-                variants={fadeUp}
-                whileHover={{ scale: 1.015, y: -4 }}
-              >
-                <div className="market-v2-card-image">
-                  <img
-                    src={getSafeImageUrl(p.imageUrl, "equipment")}
-                    alt={p.name}
-                    loading="lazy"
-                    onError={onImageError("equipment")}
-                  />
-                  <span className="market-v2-ribbon">{index % 2 === 0 ? "Rental Ready" : "Verified Supplier"}</span>
-                </div>
-                <div className="market-v2-card-body">
-                  <div className="market-v2-card-top">
-                    <h4>{p.name}</h4>
-                    <strong>INR {p.dailyRate} / day</strong>
+            {isLoading && tools.length === 0 ? (
+               Array.from({ length: 6 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))
+            ) : !isLoading && filteredTools.length === 0 && !error ? (
+              <p className="market-v2-muted">{t("farmer.tools.empty")}</p>
+            ) : (
+              filteredTools.map((p, index) => (
+                <motion.article
+                  key={p.id}
+                  className="market-v2-card"
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.015, y: -4 }}
+                >
+                  <div className="market-v2-card-image">
+                    <img
+                      src={getSafeImageUrl(p.imageUrl, "equipment")}
+                      alt={p.name}
+                      loading="lazy"
+                      onError={onImageError("equipment")}
+                    />
+                    <span className="market-v2-ribbon">{index % 2 === 0 ? "Rental Ready" : "Verified Supplier"}</span>
                   </div>
-                  <p>{p.description || "No description"}</p>
-                  {p.supplier && (
-                    <div className="market-v2-card-meta">
-                      <span>{p.supplier.businessName || p.supplier.name}</span>
-                      <small>Rating: {p.supplier.rating ?? 0}</small>
+                  <div className="market-v2-card-body">
+                    <div className="market-v2-card-top">
+                      <h4>{p.name}</h4>
+                      <strong>INR {p.dailyRate} / day</strong>
                     </div>
-                  )}
-                  <Button
-                    className="market-v2-cart-btn"
-                    onClick={() => handleAddToCart(p)}
-                    disabled={!p.available}
-                    style={{ opacity: p.available ? 1 : 0.5, cursor: p.available ? "pointer" : "not-allowed" }}
-                  >
-                    {p.available ? t("common.actions.addToCart") : t("farmer.tools.unavailable")}
-                  </Button>
-                </div>
-              </motion.article>
-            ))}
+                    <p>{p.description || "No description"}</p>
+                    {p.supplier && (
+                      <div className="market-v2-card-meta">
+                        <span>{p.supplier.businessName || p.supplier.name}</span>
+                        <small>Rating: {p.supplier.rating ?? 0}</small>
+                      </div>
+                    )}
+                    <Button
+                      className="market-v2-cart-btn"
+                      onClick={() => handleAddToCart(p)}
+                      disabled={!p.available}
+                      style={{ opacity: p.available ? 1 : 0.5, cursor: p.available ? "pointer" : "not-allowed" }}
+                    >
+                      {p.available ? t("common.actions.addToCart") : t("farmer.tools.unavailable")}
+                    </Button>
+                  </div>
+                </motion.article>
+              ))
+            )}
           </motion.div>
         </section>
       </div>

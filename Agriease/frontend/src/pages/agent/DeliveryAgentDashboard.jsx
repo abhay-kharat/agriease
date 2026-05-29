@@ -7,8 +7,11 @@ import api from "../../api/axios";
 import { useAuth } from "../../auth/AuthContext";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import PremiumLoader from "../../components/PremiumLoader";
+import { DeliveryAgentDashboardSkeleton } from "../../components/skeletons/DashboardSkeleton";
 import ThemeToggle from "../../components/ThemeToggle";
 import Button from "../../components/ui/Button";
+import EmptyState from "../../components/ui/EmptyState";
+import { Truck } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../styles/delivery-agent-dashboard.css";
 
@@ -785,14 +788,15 @@ export default function DeliveryAgentDashboard() {
         </div>
       </section>
 
-      {loading && (
-        <div className="agent-loading">
-          <p>{"Fetching dispatch data..."}</p>
-        </div>
-      )}
       {!loading && !orders.length && (
-        <div className="agent-loading">
-          <p>{"Dispatch empty. Take a break!"}</p>
+        <div className="p-8">
+          <EmptyState
+            icon={Truck}
+            title={t("agent.dashboard.emptyTitle") || "No Shipments Assigned"}
+            description={t("agent.dashboard.emptyDescription") || "You don't have any active delivery assignments at the moment. Check back later or refresh to see new orders."}
+            actionLabel={t("common.actions.refresh") || "Refresh Dashboard"}
+            onAction={fetchOrders}
+          />
         </div>
       )}
 

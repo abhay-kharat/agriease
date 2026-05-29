@@ -3,8 +3,10 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { CartProvider } from "./context/CartContext";
-import { useLanguage } from "./context/LanguageContext";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { ToastContainer } from "react-toastify";
+import { NotificationProvider } from "./context/NotificationContext";
+import GlobalInterceptor from './components/GlobalInterceptor';
 import GlobalLoadingScreen from "./components/GlobalLoadingScreen";
 import GlobalPageEffects from "./components/GlobalPageEffects";
 
@@ -12,6 +14,7 @@ import Landing from "./pages/Landing";
 import AuthPage from "./pages/AuthPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+
 
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
 import SupplierDashboard from "./pages/supplier/SupplierDashboard";
@@ -74,73 +77,80 @@ export default function App() {
   }, [location.pathname]);
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <div className="app-root app-container">
-          <GlobalLoadingScreen visible={routeLoading} />
-          <GlobalPageEffects />
-          <main className="app-main">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.28 }}
-                className="route-transition-wrap"
-              >
-                <Routes location={location}>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/auth" element={<AuthPage initialMode="login" />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <NotificationProvider>
+            <GlobalInterceptor />
+            <div className="app-root app-container">
+              <GlobalLoadingScreen visible={routeLoading} />
+              <GlobalPageEffects />
+              <main className="app-main">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={location.pathname}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.28 }}
+                    className="route-transition-wrap"
+                  >
+                    <Routes location={location}>
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/auth" element={<AuthPage initialMode="login" />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
 
-                  <Route
-                    path="/farmer/*"
-                    element={
-                      <Protected role="FARMER">
-                        <FarmerDashboard />
-                      </Protected>
-                    }
-                  />
+                      
 
-                  <Route
-                    path="/supplier/*"
-                    element={
-                      <Protected role="SUPPLIER">
-                        <SupplierDashboard />
-                      </Protected>
-                    }
-                  />
+                      <Route
+                        path="/farmer/*"
+                        element={
+                          <Protected role="FARMER">
+                            <FarmerDashboard />
+                          </Protected>
+                        }
+                      />
 
-                  <Route
-                    path="/agent-dashboard"
-                    element={
-                      <Protected role="DELIVERY_AGENT">
-                        <DeliveryAgentDashboard />
-                      </Protected>
-                    }
-                  />
+                      <Route
+                        path="/supplier/*"
+                        element={
+                          <Protected role="SUPPLIER">
+                            <SupplierDashboard />
+                          </Protected>
+                        }
+                      />
 
-                  <Route
-                    path="/orders/:orderId"
-                    element={
-                      <Protected role="FARMER">
-                        <OrderTracking />
-                      </Protected>
-                    }
-                  />
-                </Routes>
-              </motion.div>
-            </AnimatePresence>
-          </main>
-          <AppFooter />
-          <ToastContainer
-            position="top-right"
-            className="toast-container"
-          />
-        </div>
-    </CartProvider>
-  </AuthProvider>
+                      <Route
+                        path="/agent-dashboard"
+                        element={
+                          <Protected role="DELIVERY_AGENT">
+                            <DeliveryAgentDashboard />
+                          </Protected>
+                        }
+                      />
+
+                      <Route
+                        path="/orders/:orderId"
+                        element={
+                          <Protected role="FARMER">
+                            <OrderTracking />
+                          </Protected>
+                        }
+                      />
+                    </Routes>
+                  </motion.div>
+                </AnimatePresence>
+              </main>
+              <AppFooter />
+              <ToastContainer
+                position="top-right"
+                className="toast-container"
+              />
+            </div>
+          </NotificationProvider>
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

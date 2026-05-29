@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import WeatherWidget from "../../components/WeatherWidget";
 import PremiumLoader from "../../components/PremiumLoader";
+import { FarmerDashboardSkeleton } from "../../components/skeletons/DashboardSkeleton";
 import {
   DashboardPanel,
   DashboardQuickActionCard,

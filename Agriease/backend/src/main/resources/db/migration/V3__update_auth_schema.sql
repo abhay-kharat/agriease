@@ -1,5 +1,7 @@
 -- Expand auth schema with role-specific tables for farmers and suppliers
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE;
+
 CREATE TABLE IF NOT EXISTS farmers (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,

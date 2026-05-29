@@ -7,10 +7,14 @@ import api from "../../api/axios";
 import { uploadToCloudinary } from "../../services/cloudinary";
 import { getSafeImageUrl, onImageError } from "../../utils/imageUtils";
 import { useLanguage } from "../../context/LanguageContext";
+import ProductCardSkeleton from "../../components/skeletons/ProductCardSkeleton";
+import EmptyState from "../../components/ui/EmptyState";
+import { PackageX } from "lucide-react";
 
 export default function SupplierProducts() {
   const { t } = useLanguage();
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -35,10 +39,12 @@ export default function SupplierProducts() {
   };
 
   const fetchProducts = useCallback(() => {
+    setLoading(true);
     api
       .get("/supplier/products")
       .then((res) => setProducts(res.data))
-      .catch(() => toast.error(t("messages.loadProductsError")));
+      .catch(() => toast.error(t("messages.loadProductsError")))
+      .finally(() => setLoading(false));
   }, [t]);
 
   useEffect(() => {
@@ -254,9 +260,7 @@ export default function SupplierProducts() {
                   style={{
                     width: "200px",
                     height: "150px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    marginTop: "10px",
+                    objectFit: "cover"
                   }}
                 />
               )}
@@ -270,42 +274,51 @@ export default function SupplierProducts() {
       )}
 
       <motion.div className="market-v2-grid" variants={staggerContainer}>
-        {filteredProducts.length === 0 && (
-          <p className="market-v2-muted" style={{ gridColumn: "1 / -1" }}>
-            {t("supplier.products.empty")}
-          </p>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ gridColumn: "1 / -1" }}>
+            <EmptyState
+              icon={PackageX}
+              title={t("supplier.products.emptyTitle") || "No Products Found"}
+              description={t("supplier.products.emptyDescription") || "You haven't added any products to your catalog yet or your search matched nothing."}
+              actionLabel={t("common.actions.addProduct")}
+              onAction={() => setShowForm(true)}
+            />
+          </div>
+        ) : (
+          filteredProducts.map((product, index) => (
+            <motion.article key={product.id} className="market-v2-card" variants={fadeUp} whileHover={{ y: -4, scale: 1.01 }}>
+              <div className="market-v2-card-image">
+                <img
+                  src={getSafeImageUrl(product.imageUrl, "product")}
+                  alt={product.name}
+                  loading="lazy"
+                  onError={onImageError("product")}
+                />
+                <span className="market-v2-ribbon">{index % 2 === 0 ? product.type : "Catalog"}</span>
+              </div>
+              <div className="market-v2-card-body">
+                <div className="market-v2-card-top">
+                  <h4>{product.name}</h4>
+                  <strong>INR {product.price}</strong>
+                </div>
+                <p>{product.description || t("supplier.products.noDescription")}</p>
+                <div className="market-v2-card-meta">
+                  <span>{product.type}</span>
+                </div>
+                <div className="supplier-manage-v2__actions">
+                  <Button className="btn secondary square" onClick={() => handleEdit(product)}>
+                    {t("common.actions.edit")}
+                  </Button>
+                  <Button className="btn secondary square supplier-manage-v2__delete" onClick={() => handleDelete(product.id)}>
+                    {t("common.actions.delete")}
+                  </Button>
+                </div>
+              </div>
+            </motion.article>
+          ))
         )}
-        {filteredProducts.map((product, index) => (
-          <motion.article key={product.id} className="market-v2-card" variants={fadeUp} whileHover={{ y: -4, scale: 1.01 }}>
-            <div className="market-v2-card-image">
-              <img
-                src={getSafeImageUrl(product.imageUrl, "product")}
-                alt={product.name}
-                loading="lazy"
-                onError={onImageError("product")}
-              />
-              <span className="market-v2-ribbon">{index % 2 === 0 ? product.type : "Catalog"}</span>
-            </div>
-            <div className="market-v2-card-body">
-              <div className="market-v2-card-top">
-                <h4>{product.name}</h4>
-                <strong>INR {product.price}</strong>
-              </div>
-              <p>{product.description || t("supplier.products.noDescription")}</p>
-              <div className="market-v2-card-meta">
-                <span>{product.type}</span>
-              </div>
-              <div className="supplier-manage-v2__actions">
-                <Button className="btn secondary square" onClick={() => handleEdit(product)}>
-                  {t("common.actions.edit")}
-                </Button>
-                <Button className="btn secondary square supplier-manage-v2__delete" onClick={() => handleDelete(product.id)}>
-                  {t("common.actions.delete")}
-                </Button>
-              </div>
-            </div>
-          </motion.article>
-        ))}
       </motion.div>
     </motion.div>
   );

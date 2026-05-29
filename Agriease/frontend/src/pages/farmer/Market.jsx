@@ -252,50 +252,54 @@ export default function Market() {
           </motion.div>
 
           <motion.div className="market-v2-grid" variants={staggerContainer}>
-            {currentProducts.length === 0 && (
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))
+            ) : currentProducts.length === 0 ? (
               <motion.div className="empty-state" style={{ gridColumn: "1 / -1" }} variants={fadeUp}>
                 {t("farmer.market.empty")}
               </motion.div>
+            ) : (
+              currentProducts.map((product, index) => (
+                <motion.article
+                  key={product.id}
+                  className="market-v2-card"
+                  variants={fadeUp}
+                  whileHover={{ y: -6 }}
+                >
+                  <div className="market-v2-card-image">
+                    <img
+                      src={getSafeImageUrl(product.imageUrl, "product")}
+                      alt={product.name}
+                      loading="lazy"
+                      onError={onImageError("product")}
+                    />
+                    <span className="market-v2-ribbon">{getRibbon(index)}</span>
+                  </div>
+
+                  <div className="market-v2-card-body">
+                    <div className="market-v2-card-top">
+                      <h4>{product.name}</h4>
+                      <strong>INR {Number(product.price || 0).toLocaleString()}</strong>
+                    </div>
+
+                    <p>{product.description || t("farmer.market.other")}</p>
+
+                    <div className="market-v2-card-meta">
+                      <span>
+                        ★ {product.supplier?.rating?.toFixed(1) || "N/A"}
+                      </span>
+                      <small>{getCategoryLabel(product)}</small>
+                    </div>
+
+                    <button type="button" className="market-v2-cart-btn" onClick={() => addProduct(product)}>
+                      <span className="material-symbols-outlined">shopping_cart</span>
+                    </button>
+                  </div>
+                </motion.article>
+              ))
             )}
-
-            {currentProducts.map((product, index) => (
-              <motion.article
-                key={product.id}
-                className="market-v2-card"
-                variants={fadeUp}
-                whileHover={{ y: -6 }}
-              >
-                <div className="market-v2-card-image">
-                  <img
-                    src={getSafeImageUrl(product.imageUrl, "product")}
-                    alt={product.name}
-                    loading="lazy"
-                    onError={onImageError("product")}
-                  />
-                  <span className="market-v2-ribbon">{getRibbon(index)}</span>
-                </div>
-
-                <div className="market-v2-card-body">
-                  <div className="market-v2-card-top">
-                    <h4>{product.name}</h4>
-                    <strong>INR {Number(product.price || 0).toLocaleString()}</strong>
-                  </div>
-
-                  <p>{product.description || t("farmer.market.other")}</p>
-
-                  <div className="market-v2-card-meta">
-                    <span>
-                      ★ {product.supplier?.rating?.toFixed(1) || "N/A"}
-                    </span>
-                    <small>{getCategoryLabel(product)}</small>
-                  </div>
-
-                  <button type="button" className="market-v2-cart-btn" onClick={() => addProduct(product)}>
-                    <span className="material-symbols-outlined">shopping_cart</span>
-                  </button>
-                </div>
-              </motion.article>
-            ))}
           </motion.div>
 
           <motion.div className="market-v2-pagination" variants={fadeUp}>

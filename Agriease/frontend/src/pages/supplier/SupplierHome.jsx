@@ -18,6 +18,7 @@ import {
   dashboardStagger,
 } from "../../components/dashboard/DashboardUi";
 import PremiumLoader from "../../components/PremiumLoader";
+import { SupplierDashboardSkeleton } from "../../components/skeletons/DashboardSkeleton";
 import Button from "../../components/ui/Button";
 import api from "../../api/axios";
 import { useAuth } from "../../auth/AuthContext";

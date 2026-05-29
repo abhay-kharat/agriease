@@ -27,11 +27,6 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", message);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException ex) {
-        return buildError(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage() != null ? ex.getMessage() : "Bad request");
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleUnhandled(Exception ex) {
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", ex.getMessage() != null ? ex.getMessage() : "Unexpected error");

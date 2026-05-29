@@ -5,13 +5,15 @@ import java.util.List;
 
 public class LoginResponse {
     private String token;
+    private String refreshToken;
     private String role;
     private String name;
     private Long userId;
     private List<String> roles;
 
-    public LoginResponse(String token, String role, String name, Long userId, List<String> roles) {
+    public LoginResponse(String token, String refreshToken, String role, String name, Long userId, List<String> roles) {
         this.token = token;
+        this.refreshToken = refreshToken;
         this.role = role;
         this.name = name;
         this.userId = userId;
@@ -24,6 +26,14 @@ public class LoginResponse {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public String getRole() {

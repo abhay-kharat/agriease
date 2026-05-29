@@ -24,6 +24,9 @@ public class JwtUtil {
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
+    @Value("${jwt.refresh-expiration-ms:604800000}")
+    private long refreshExpirationMs;
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -55,6 +58,22 @@ public class JwtUtil {
     public String generateToken(String username, RoleType role) {
         String roleClaim = role != null ? role.canonical().name() : null;
         return createToken(roleClaim != null ? Map.of("role", roleClaim) : Map.of(), username);
+    }
+
+    public String generateRefreshToken(String username) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + refreshExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public long getRefreshExpirationMs() {
+        return refreshExpirationMs;
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

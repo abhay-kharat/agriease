@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import Button from "../../components/ui/Button";
+import EmptyState from "../../components/ui/EmptyState";
+import { ShoppingBag } from "lucide-react";
 import BackButton from "../../components/BackButton";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -144,23 +146,16 @@ export default function Orders() {
 
       <motion.div style={{ marginTop: "24px", display: "grid", gap: "16px" }} variants={staggerContainer}>
         {orders.length === 0 && (
-          <motion.div className="order-card order-card--empty" variants={fadeUp}>
-            <div className="order-card__empty-state">
-              <p style={{ fontSize: "18px", color: "var(--muted)", fontWeight: "500" }}>
-                {t("farmer.orders.empty")}
-              </p>
-              <Button
-                className="btn primary square"
-                onClick={() => navigate("/farmer/market")}
-                style={{ marginTop: "16px" }}
-              >
-                {t("common.actions.browseMarket")}
-              </Button>
-            </div>
-          </motion.div>
+          <EmptyState
+            icon={ShoppingBag}
+            title={t("farmer.orders.emptyTitle") || "No Orders Yet"}
+            description={t("farmer.orders.emptyDescription") || "You haven't placed any orders yet. Visit the market to find the best agricultural products."}
+            actionLabel={t("common.actions.browseMarket")}
+            onAction={() => navigate("/farmer/market")}
+          />
         )}
 
-        {orders.map((order, idx) => {
+        {orders.map((order) => {
           const displayOrderNumber = order.displayOrderNumber ?? order.id;
           return (
             <motion.div

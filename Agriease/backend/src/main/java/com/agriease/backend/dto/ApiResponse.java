@@ -1,5 +1,8 @@
 package com.agriease.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     private T data;
     private Object error;
@@ -10,7 +13,7 @@ public class ApiResponse<T> {
         this.status = status;
     }
 
-    public ApiResponse(Object error, int status, boolean isError) {
+    public ApiResponse(Object error, int status, String dummy) {
         this.error = error;
         this.status = status;
     }
@@ -24,7 +27,7 @@ public class ApiResponse<T> {
     }
 
     public static <T> ApiResponse<T> error(Object error, int status) {
-        return new ApiResponse<>(error, status, true);
+        return new ApiResponse<>(error, status, "error");
     }
 
     public T getData() {
